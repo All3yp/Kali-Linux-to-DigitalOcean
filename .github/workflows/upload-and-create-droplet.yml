@@ -49,16 +49,17 @@ jobs:
                   \"region\": \"nyc3\",
                   \"size\": \"s-1vcpu-1gb\",
                   \"image\": \"${{ env.image_id }}\",
-                  \"ssh_keys\": [\"${{ secrets.DVPS_KEY }}\"],
+                  \"ssh_keys\": [${{ secrets.DVPS_KEY }}],
                   \"backups\": false,
                   \"ipv6\": true,
                   \"tags\": [\"kali-droplet\"]
                 }")
           
-          if [ "$response" -ne 200 ] && [ "$response" -ne 202 ]; then
-            echo "❌ Error creating the Droplet! HTTP Code: $response"
+          response_code=$(tail -n 1 <<< "$response")
+          if [ "$response_code" -ne 200 ] && [ "$response_code" -ne 202 ]; then
+            echo "❌ Error creating the Droplet! HTTP Code: $response_code"
             cat response.json
             exit 1
           fi
-
+      
           echo "Droplet criado com sucesso!"
