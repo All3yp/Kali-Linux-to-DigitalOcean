@@ -10,6 +10,21 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
+
+      - name: Get Custom Image ID
+        id: get-image-id
+        run: |
+          set -e
+          image_id=$(curl -s -X GET "https://api.digitalocean.com/v2/images?private=true" \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" | \
+            jq -r '.images[] | select(.name=="kali-linux") | .id')
+      
+          if [ -z "$image_id" ]; then
+            echo "❌ Não foi possível encontrar a imagem personalizada 'kali-linux'."
+            exit 1
+          fi
+      
+          echo "image_id=$image_id" >> $GITHUB_ENV
       
       - name: Create Droplet on DigitalOcean
         run: |
