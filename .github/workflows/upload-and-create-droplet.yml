@@ -11,26 +11,26 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Upload to DigitalOcean
-        run: |
-          set -e
-          release_url="https://github.com/${{ github.repository }}/releases/latest/download/disk.raw.gz"
-          response=$(curl -s -w "%{http_code}" -o response.json -X POST "https://api.digitalocean.com/v2/images" \
-            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-                  \"name\": \"Kali Linux\",
-                  \"url\": \"$release_url\",
-                  \"distribution\": \"Debian\",
-                  \"region\": \"nyc3\",
-                  \"description\": \"Kali Linux Custom Image\",
-                  \"tags\": [\"kali\"]
-                }")
-          if [ "$response" -ne 200 ] && [ "$response" -ne 201 ]; then
-            cat response.json
-            echo "❌ Error during image upload!"
-            exit 1
-          fi
+      # - name: Upload to DigitalOcean
+      #   run: |
+      #     set -e
+      #     release_url="https://github.com/${{ github.repository }}/releases/latest/download/disk.raw.gz"
+      #     response=$(curl -s -w "%{http_code}" -o response.json -X POST "https://api.digitalocean.com/v2/images" \
+      #       -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
+      #       -H "Content-Type: application/json" \
+      #       -d "{
+      #             \"name\": \"Kali Linux\",
+      #             \"url\": \"$release_url\",
+      #             \"distribution\": \"Debian\",
+      #             \"region\": \"nyc3\",
+      #             \"description\": \"Kali Linux Custom Image\",
+      #             \"tags\": [\"kali\"]
+      #           }")
+      #     if [ "$response" -ne 200 ] && [ "$response" -ne 201 ]; then
+      #       cat response.json
+      #       echo "❌ Error during image upload!"
+      #       exit 1
+      #     fi
       
       - name: Create Droplet on DigitalOcean
         run: |
