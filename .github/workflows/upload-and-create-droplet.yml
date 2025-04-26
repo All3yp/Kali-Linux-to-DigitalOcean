@@ -22,22 +22,22 @@ jobs:
           response_code=$(echo "$response" | tail -n 1)
 
           if [ "$response_code" -ne 200 ]; then
-            echo "❌ Erro ao buscar a lista de imagens personalizadas. Código HTTP: $response_code"
-            echo "Resposta da API: $response_body"
+            echo "❌ Error fetching custom images. HTTP Code: $response_code"
+            echo "API Response: $response_body"
             exit 1
           fi
 
           image_id=$(echo "$response_body" | jq -r '.images[] | select(.name=="kali-linux") | .id')
       
           if [ -z "$image_id" ]; then
-            echo "❌ Não foi possível encontrar a imagem personalizada 'kali-linux'."
-            echo "Resposta da API: $response_body"
+            echo "❌ Unable to find the custom image 'kali-linux'."
+            echo "API Response: $response_body"
             exit 1
           fi
       
-          echo "Custom image ID encontrado: $image_id"
+          echo "Custom image ID found: $image_id"
           echo "image_id=$image_id" >> $GITHUB_ENV
-      
+
       - name: Create Droplet on DigitalOcean
         run: |
           set -e
@@ -61,5 +61,5 @@ jobs:
             cat response.json
             exit 1
           fi
-      
-          echo "Droplet criado com sucesso!"
+
+          echo "Droplet created successfully!"
