@@ -15,15 +15,27 @@ jobs:
         id: get-image-id
         run: |
           set -e
-          image_id=$(curl -s -X GET "https://api.digitalocean.com/v2/images?private=true" \
-            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" | \
-            jq -r '.images[] | select(.name=="kali-linux") | .id')
+          response=$(curl -s -w "\n%{http_code}" -X GET "https://api.digitalocean.com/v2/images?private=true" \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}")
+          
+          response_body=$(echo "$response" | head -n -1)
+          response_code=$(echo "$response" | tail -n 1)
+
+          if [ "$response_code" -ne 200 ]; then
+            echo "❌ Erro ao buscar a lista de imagens personalizadas. Código HTTP: $response_code"
+            echo "Resposta da API: $response_body"
+            exit 1
+          fi
+
+          image_id=$(echo "$response_body" | jq -r '.images[] | select(.name=="kali-linux") | .id')
       
           if [ -z "$image_id" ]; then
             echo "❌ Não foi possível encontrar a imagem personalizada 'kali-linux'."
+            echo "Resposta da API: $response_body"
             exit 1
           fi
       
+          echo "Custom image ID encontrado: $image_id"
           echo "image_id=$image_id" >> $GITHUB_ENV
       
       - name: Create Droplet on DigitalOcean
@@ -36,14 +48,17 @@ jobs:
                   \"name\": \"kali-droplet\",
                   \"region\": \"nyc3\",
                   \"size\": \"s-1vcpu-1gb\",
-                  \"image\": \"custom-image-id\",
+                  \"image\": \"${{ env.image_id }}\",
                   \"ssh_keys\": [\"${{ secrets.DVPS_KEY }}\"],
                   \"backups\": false,
                   \"ipv6\": true,
                   \"tags\": [\"kali-droplet\"]
                 }")
+          
           if [ "$response" -ne 200 ] && [ "$response" -ne 202 ]; then
+            echo "❌ Error creating the Droplet! HTTP Code: $response"
             cat response.json
-            echo "❌ Error creating the Droplet!"
             exit 1
           fi
+
+          echo "Droplet criado com sucesso!"
