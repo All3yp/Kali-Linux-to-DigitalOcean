@@ -13,30 +13,42 @@ jobs:
 
       - name: Upload to DigitalOcean
         run: |
-          curl -X POST "https://api.digitalocean.com/v2/images" \
-          -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d "{
-                \"name\": \"Kali Linux\",
-                \"url\": \"https://github.com/${{ github.repository }}/releases/download/disk.raw.gz\",
-                \"distribution\": \"Debian\",
-                \"region\": \"nyc3\", # Substitua pela região desejada
-                \"description\": \"Kali Linux Custom Image\",
-                \"tags\": [\"kali\"]
-              }"
-
+          set -e
+          response=$(curl -s -w "%{http_code}" -o response.json -X POST "https://api.digitalocean.com/v2/images" \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+                  \"name\": \"Kali Linux\",
+                  \"url\": \"https://github.com/${{ github.repository }}/releases/download/disk.raw.gz\",
+                  \"distribution\": \"Debian\",
+                  \"region\": \"nyc3\",
+                  \"description\": \"Kali Linux Custom Image\",
+                  \"tags\": [\"kali\"]
+                }")
+          if [ "$response" -ne 200 ] && [ "$response" -ne 201 ]; then
+            cat response.json
+            echo "❌ Error during image upload!"
+            exit 1
+          fi
+      
       - name: Create Droplet on DigitalOcean
         run: |
-          curl -X POST "https://api.digitalocean.com/v2/droplets" \
-          -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d "{
-                \"name\": \"kali-droplet\",
-                \"region\": \"nyc3\", # Substitua pela região desejada
-                \"size\": \"s-1vcpu-1gb\",
-                \"image\": \"custom-image-id\", # Substitua pelo ID ou slug da imagem
-                \"ssh_keys\": [\"${{ secrets.DVPS_KEY }}\"],
-                \"backups\": false,
-                \"ipv6\": true,
-                \"tags\": [\"kali-droplet\"]
-              }"
+          set -e
+          response=$(curl -s -w "%{http_code}" -o response.json -X POST "https://api.digitalocean.com/v2/droplets" \
+            -H "Authorization: Bearer ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+                  \"name\": \"kali-droplet\",
+                  \"region\": \"nyc3\",
+                  \"size\": \"s-1vcpu-1gb\",
+                  \"image\": \"custom-image-id\",
+                  \"ssh_keys\": [\"${{ secrets.DVPS_KEY }}\"],
+                  \"backups\": false,
+                  \"ipv6\": true,
+                  \"tags\": [\"kali-droplet\"]
+                }")
+          if [ "$response" -ne 200 ] && [ "$response" -ne 202 ]; then
+            cat response.json
+            echo "❌ Error creating the Droplet!"
+            exit 1
+          fi
